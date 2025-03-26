@@ -47,3 +47,5 @@ $ cargo run -- --file $FILE_NAME
 - Docs
     - [ ] Usage examples with other markdown renderers (see [this example](https://github.com/ctdunc/ctdunc.github.io/blob/master/_publish_blog.sh)).
     - [ ] CONTRIBUTING.
+    - [ ] CSS examples.
+
