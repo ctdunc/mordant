@@ -38,7 +38,7 @@ $ cargo run -- --file $FILE_NAME
 - Config
     - [ ] Config file (+ hierarchy).
     - [ ] Import grammars, queries.
--Hygiene
+- Hygiene
     - [ ] Don't just put everything in `main`.
     - [ ] Tests
 - Performance
