@@ -4,6 +4,7 @@ use tree_sitter::{self, QueryCapture, StreamingIterator};
 use tree_sitter_facade::create_highlights;
 use tree_sitter_highlight::{HighlightEvent, Highlighter};
 use tree_sitter_md;
+mod config;
 mod tree_sitter_facade;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
