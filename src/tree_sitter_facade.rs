@@ -68,25 +68,25 @@ fn get_lang_by_name(lang: &str) -> Option<HighlightConfiguration> {
             hl_query = Some(tree_sitter_typescript::HIGHLIGHTS_QUERY);
             inj_query = None;
         }
+        /*
         "javascript" => {
             hl_lang = Some(tree_sitter_javascript::LANGUAGE.into());
             hl_query = Some(tree_sitter_javascript::HIGHLIGHT_QUERY);
             inj_query = None;
-        }
+        }*/
+        /*
         "lua" => {
             hl_lang = Some(tree_sitter_lua::LANGUAGE.into());
             hl_query = Some(tree_sitter_lua::HIGHLIGHTS_QUERY);
             inj_query = None;
-        }
+        }*/
         "json" => {
             hl_lang = Some(tree_sitter_json::LANGUAGE.into());
             hl_query = Some(tree_sitter_json::HIGHLIGHTS_QUERY);
             inj_query = None;
         }
         _ => {
-            hl_lang = None;
-            hl_query = None;
-            inj_query = None;
+            return crate::config::HighlighterOptions::try_from_name(lang).as_highlight_config();
         }
     }
     if let (Some(l), Some(q)) = (hl_lang, hl_query) {
