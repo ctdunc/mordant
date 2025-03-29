@@ -1,16 +1,18 @@
 use clap::Parser;
+use config::{Config, HLO};
 use std::fs::read_to_string;
 use tree_sitter::{self, QueryCapture, StreamingIterator};
-use tree_sitter_facade::create_highlights;
 use tree_sitter_highlight::{HighlightEvent, Highlighter};
 use tree_sitter_md;
 mod config;
-mod tree_sitter_facade;
+// mod markdown;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
     #[arg(long)]
     file: String,
+    #[arg(long, short, default_value_t = String::from("./mordant.toml"))]
+    config_file: String,
 }
 const HIGHLIGHT_NAMES: [&str; 26] = [
     "attribute",
@@ -42,6 +44,8 @@ const HIGHLIGHT_NAMES: [&str; 26] = [
 ];
 fn main() {
     let args = Args::parse();
+    let config: Config =
+        toml::from_str(read_to_string(args.config_file).unwrap().as_str()).unwrap();
     let file_contents = read_to_string(args.file).unwrap();
 
     let mut md_parser = tree_sitter::Parser::new();
@@ -66,7 +70,14 @@ fn main() {
     );
     let mut highlighter = Highlighter::new();
     let mut offset: usize = 0;
-    let highlight_configs = create_highlights();
+    let highlight_configs = config
+        .get_highlighter_configurations(
+            ["python", "javascript", "typescript", "json", "lua"]
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+        )
+        .unwrap();
     while let Some(query_match) = code_blocks.next() {
         // TODO are captures always in order?
         let captures: Vec<&QueryCapture> = query_match.captures.iter().collect();
@@ -80,8 +91,6 @@ fn main() {
             let code_end = code_cap.node.end_byte();
             let code_block = &file_contents[code_start..code_end];
             let highlights = highlighter.highlight(&hl_cfg, code_block.as_bytes(), None, |lang| {
-                // TODO how do i deal with this?
-                //println!("getting lang: {}", lang);
                 return highlight_configs.get(lang);
             });
 
