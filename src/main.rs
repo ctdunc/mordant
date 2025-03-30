@@ -1,5 +1,5 @@
 use clap::Parser;
-use config::Config;
+use config::{Config, HIGHLIGHT_NAMES};
 use std::fs::read_to_string;
 use tree_sitter::{self, QueryCapture, StreamingIterator};
 use tree_sitter_highlight::{HighlightEvent, Highlighter};
@@ -14,38 +14,15 @@ struct Args {
     #[arg(long, short, default_value_t = String::from("./mordant.toml"))]
     config_file: String,
 }
-const HIGHLIGHT_NAMES: [&str; 26] = [
-    "attribute",
-    "comment",
-    "constant",
-    "constant.builtin",
-    "constructor",
-    "embedded",
-    "function",
-    "function.builtin",
-    "keyword",
-    "module",
-    "number",
-    "operator",
-    "property",
-    "property.builtin",
-    "punctuation",
-    "punctuation.bracket",
-    "punctuation.delimiter",
-    "punctuation.special",
-    "string",
-    "string.special",
-    "tag",
-    "type",
-    "type.builtin",
-    "variable",
-    "variable.builtin",
-    "variable.parameter",
-];
 fn main() {
     let args = Args::parse();
-    let config: Config =
-        toml::from_str(read_to_string(args.config_file).unwrap().as_str()).unwrap();
+    let config: Config = toml::from_str(
+        read_to_string(args.config_file)
+            .unwrap_or_default()
+            .as_str(),
+    )
+    .unwrap();
+
     let file_contents = read_to_string(args.file).unwrap();
 
     let mut md_parser = tree_sitter::Parser::new();
@@ -90,6 +67,10 @@ fn main() {
             let code_start = code_cap.node.start_byte();
             let code_end = code_cap.node.end_byte();
             let code_block = &file_contents[code_start..code_end];
+            eprintln!(
+                "highlighting block [{}, {}] with language {}",
+                code_start, code_end, lang
+            );
             let highlights = highlighter.highlight(&hl_cfg, code_block.as_bytes(), None, |lang| {
                 return highlight_configs.get(lang);
             });
