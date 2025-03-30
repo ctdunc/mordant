@@ -5,26 +5,56 @@ use std::collections::{BTreeMap, HashMap};
 use std::{env::VarError, fs::read_to_string, path::PathBuf};
 use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
-const NVIM_TREESITTER_LOCATION: [&str; 6] =
-    ["~", ".local", "share", "nvim", "lazy", "nvim-treesitter"];
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
-    languages: BTreeMap<String, HLO>,
+    #[serde(default = "default_nvim_treesitter")]
+    nvim_treesitter_location: PathBuf,
+    languages: BTreeMap<String, HighlighterOptions>,
 }
-
+fn default_nvim_treesitter() -> PathBuf {
+    // this is a valid path, and we don't try to read it here, so this should never panic.
+    // TODO: test on W*ndows.
+    return expand_path(PathBuf::from("~/.local/share/lazy/nvim/nvim-treesitter")).unwrap();
+}
 impl Config {
-    /// consumes the highlight configurations.
-    pub fn get_highlighter_configurations(
+    /// Gets [`HighlightConfiguration`]s for the provided languages.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the user provided a bad configuration.
+    /// If it cannot find a language with the fallback (whether or not the user provided
+    /// the nvim-treesitter directory) it will print an error message and skip that language.
+    pub fn get_highlight_configurations(
         mut self,
         names: Vec<String>,
     ) -> Result<HashMap<String, HighlightConfiguration>, HighlighterOptionError> {
         let mut configs: HashMap<String, HighlightConfiguration> = HashMap::new().into();
         for name in names.iter() {
-            let cnfg: HLO = self.languages.remove(name).take().unwrap_or_else(|| {
-                HLO::from_name(&name)
-                    .expect(format!("Provided configuration was invalid for {}", name).as_str())
-            });
-            configs.insert(name.clone(), cnfg.into_highlight_config()?);
+            match self.languages.remove(name).take() {
+                Some(lang) => {
+                    configs.insert(name.clone(), lang.into_highlight_config()?);
+                }
+                None => {
+                    let maybe_default_lang =
+                        HighlighterOptions::from_name(&name, &self.nvim_treesitter_location);
+                    match maybe_default_lang {
+                        Ok(lang) => {
+                            if let Ok(lang_config) = lang.into_highlight_config() {
+                                configs.insert(name.clone(), lang_config);
+                            } else {
+                                // TODO improve these error messages
+                                eprintln!("{} had a bad default configuration! skipping...", name);
+                            }
+                        }
+                        Err(_) => {
+                            eprintln!(
+                                "could not construct lang for language {}! skipping...",
+                                name,
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         return Ok(configs);
@@ -44,6 +74,7 @@ pub enum HighlighterOptionError {
     NotImplementedError,
     TreeSitterError(tree_sitter::QueryError),
     ShellExpandError(shellexpand::LookupError<VarError>),
+    UnhandledError(String),
 }
 impl Into<HighlighterOptionError> for std::io::Error {
     fn into(self) -> HighlighterOptionError {
@@ -55,15 +86,14 @@ pub(crate) struct SourceFileType {
     pub path: PathBuf,
     pub symbol_name: Option<String>,
 }
-/// SourceFile second argument should be the name of the symbol in the source file/.
-/// It's assumed to be `tree_sitter_{lang}` if not provided.
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum LanguageSource {
     SourceFile(SourceFileType),
     Default(String),
 }
 #[derive(Serialize, Deserialize, Debug)]
-pub struct HLO {
+pub struct HighlighterOptions {
     pub name: String,
     pub language: LanguageSource,
     pub highlights_query: QuerySource,
@@ -71,28 +101,41 @@ pub struct HLO {
     pub locals_query: Option<QuerySource>,
 }
 
-fn _expand_path(path: PathBuf) -> PathBuf {
-    return PathBuf::from(
-        shellexpand::tilde(path.into_os_string().into_string().unwrap().as_str()).as_ref(),
-    );
+fn expand_path(path: PathBuf) -> Result<PathBuf, HighlighterOptionError> {
+    let path_as_str = path.into_os_string().into_string();
+    match path_as_str {
+        Ok(p) => match shellexpand::full(p.as_str()) {
+            Ok(new_path) => return Ok(PathBuf::from(new_path.to_string())),
+            Err(new_path) => return Err(HighlighterOptionError::ShellExpandError(new_path)),
+        },
+        Err(p) => {
+            return Err(HighlighterOptionError::UnhandledError(
+                format!("Provided path contained invalid unicode data: {:?}", p).into(),
+            ));
+        }
+    }
 }
-impl HLO {
-    /// Try to create a new highlighter configuration from just the language name,
-    /// using the nvim-treesitter installation location to search for languages.
-
-    pub fn from_name(name: &str) -> Result<HLO, HighlighterOptionError> {
+impl HighlighterOptions {
+    /// .
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if .
+    pub fn from_name(
+        name: &str,
+        nvim_treesitter_dir: &PathBuf,
+    ) -> Result<HighlighterOptions, HighlighterOptionError> {
         eprintln!("Trying to get config for {}", name);
-        let nvim_treesitter_dir: PathBuf = NVIM_TREESITTER_LOCATION.iter().collect();
         let mut language_path: PathBuf = nvim_treesitter_dir.clone();
         language_path.extend(["parser", name.into()].iter());
         language_path.set_extension("so");
-        language_path = _expand_path(language_path);
+        language_path = expand_path(language_path)?;
         let language = LanguageSource::SourceFile(SourceFileType {
             path: language_path,
             symbol_name: None,
         });
 
-        let mut query_directory: PathBuf = nvim_treesitter_dir;
+        let mut query_directory: PathBuf = nvim_treesitter_dir.clone();
         query_directory.extend(["queries", name].iter());
 
         let mut highlights_path = query_directory.clone();
@@ -116,10 +159,15 @@ impl HLO {
         });
     }
 
+    /// Returns the highlights query of this [`HighlighterOptions`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the provided query file does not exist.
     pub fn highlights_query(&self) -> Result<String, HighlighterOptionError> {
         match &self.highlights_query {
             QuerySource::Path(p) => {
-                let path = _expand_path(p.clone());
+                let path = expand_path(p.clone())?;
                 let maybe_query = read_to_string(path);
                 match maybe_query {
                     Ok(query) => {
@@ -137,19 +185,25 @@ impl HLO {
             }
         }
     }
+    /// Returns the injections query of this [`HighlighterOptions`].
+    /// If the provided file doesn't exist, this will return an empty string.
+    /// This behavior may be changed in the future.
     pub fn injections_query(&self) -> String {
         if let Some(q) = &self.injections_query {
             match q {
                 QuerySource::Path(p) => {
-                    let path = _expand_path(p.clone());
-                    let maybe_query = read_to_string(path);
-                    match maybe_query {
-                        Ok(query) => {
-                            return query;
+                    if let Ok(path) = expand_path(p.clone()) {
+                        let maybe_query = read_to_string(path);
+                        match maybe_query {
+                            Ok(query) => {
+                                return query;
+                            }
+                            _ => {
+                                return "".into();
+                            }
                         }
-                        _ => {
-                            return "".into();
-                        }
+                    } else {
+                        return "".into();
                     }
                 }
                 QuerySource::Text(query) => {
@@ -160,19 +214,25 @@ impl HLO {
             return "".into();
         }
     }
+    /// Returns the locals query of this [`HighlighterOptions`].
+    /// If the provided file doesn't exist, this will return an empty string.
+    /// This behavior may be changed in the future.
     pub fn locals_query(&self) -> String {
         if let Some(q) = &self.locals_query {
             match q {
                 QuerySource::Path(p) => {
-                    let path = _expand_path(p.clone());
-                    let maybe_query = read_to_string(path);
-                    match maybe_query {
-                        Ok(query) => {
-                            return query;
+                    if let Ok(path) = expand_path(p.clone()) {
+                        let maybe_query = read_to_string(path);
+                        match maybe_query {
+                            Ok(query) => {
+                                return query;
+                            }
+                            _ => {
+                                return "".into();
+                            }
                         }
-                        _ => {
-                            return "".into();
-                        }
+                    } else {
+                        return "".into();
                     }
                 }
                 QuerySource::Text(query) => {
@@ -183,6 +243,16 @@ impl HLO {
             return "".into();
         }
     }
+
+    /// Returns the language of this [`HighlighterOptions`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// - The specified language file does not exist.
+    /// - The specified language file does not contain the provided symbol (defaults to
+    /// `format!("tree_sitter_{}, self.name)`.
+    /// - The specified language name was not compiled as an included crate.
     pub fn language(&self) -> Result<Language, HighlighterOptionError> {
         match &self.language {
             LanguageSource::SourceFile(source) => {
@@ -191,7 +261,7 @@ impl HLO {
                     .symbol_name
                     .clone()
                     .unwrap_or(format!("tree_sitter_{}", self.name));
-                let library = match unsafe { Library::new(&_expand_path(source.path.clone())) } {
+                let library = match unsafe { Library::new(&expand_path(source.path.clone())?) } {
                     Ok(lib) => lib,
                     Err(err) => {
                         return Err(HighlighterOptionError::LibLoadingError(err));
@@ -220,6 +290,14 @@ impl HLO {
             }
         }
     }
+
+    /// Returns the [`HighlightConfiguration`] specified by these [`HighlighterOptions`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// - Any of the provided configurations do not point to valid files.
+    /// - There is an error parsing any provided queries.
     pub fn into_highlight_config(&self) -> Result<HighlightConfiguration, HighlighterOptionError> {
         match HighlightConfiguration::new(
             self.language()?,
@@ -236,78 +314,5 @@ impl HLO {
                 return Err(HighlighterOptionError::TreeSitterError(err));
             }
         }
-    }
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct HighlighterOptions {
-    pub name: String,
-    pub language_path: PathBuf,
-    pub query_directory: PathBuf,
-}
-impl HighlighterOptions {
-    pub fn try_from_name(name: &str) -> Self {
-        let nvim_treesitter_dir: PathBuf = [
-            "/",
-            "home",
-            "connor",
-            ".local",
-            "share",
-            "nvim",
-            "lazy",
-            "nvim-treesitter",
-        ]
-        .iter()
-        .collect();
-        // look in nvim-treesitter. It already has all of the relevant configuration.
-        let mut language_path: PathBuf = nvim_treesitter_dir.clone();
-        language_path.extend(["parser", name].iter());
-        language_path.set_extension("so");
-
-        let mut query_directory: PathBuf = nvim_treesitter_dir;
-        query_directory.extend(["queries", name].iter());
-
-        return Self {
-            name: name.into(),
-            language_path,
-            query_directory,
-        };
-    }
-    pub fn as_highlight_config(&self) -> Option<HighlightConfiguration> {
-        assert!(self.language_path.is_file());
-        assert!(self.query_directory.is_dir());
-        use libloading::{Library, Symbol};
-        let library = unsafe { Library::new(&self.language_path) }.unwrap();
-        let language_name = format!("tree_sitter_{}", self.name);
-        let language = unsafe {
-            let language_fn: Symbol<unsafe extern "C" fn() -> *const ()> =
-                library.get(language_name.as_bytes()).unwrap();
-            tree_sitter_language::LanguageFn::from_raw(*language_fn)
-        };
-
-        std::mem::forget(library);
-
-        let mut highlights_path = self.query_directory.clone();
-        highlights_path.push("highlights.scm");
-        let highlights = read_to_string(highlights_path).unwrap();
-
-        let mut injections_path = self.query_directory.clone();
-        injections_path.push("injections.scm");
-        let injections = read_to_string(injections_path).unwrap_or("".into());
-
-        let mut locals_path = self.query_directory.clone();
-        locals_path.push("locals.scm");
-        let locals = read_to_string(locals_path).unwrap_or("".into());
-
-        let mut highlight_config = HighlightConfiguration::new(
-            language.into(),
-            self.name.as_str(),
-            highlights.as_str(),
-            injections.as_str(),
-            locals.as_str(),
-        )
-        .unwrap();
-        highlight_config.configure(&HIGHLIGHT_NAMES);
-        return Some(highlight_config);
     }
 }

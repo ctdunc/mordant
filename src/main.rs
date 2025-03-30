@@ -1,5 +1,5 @@
 use clap::Parser;
-use config::{Config, HLO};
+use config::Config;
 use std::fs::read_to_string;
 use tree_sitter::{self, QueryCapture, StreamingIterator};
 use tree_sitter_highlight::{HighlightEvent, Highlighter};
@@ -71,7 +71,7 @@ fn main() {
     let mut highlighter = Highlighter::new();
     let mut offset: usize = 0;
     let highlight_configs = config
-        .get_highlighter_configurations(
+        .get_highlight_configurations(
             ["python", "javascript", "typescript", "json", "lua"]
                 .into_iter()
                 .map(Into::into)
