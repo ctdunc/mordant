@@ -120,7 +120,8 @@ pub fn get_language_from_source_file(
     std::mem::forget(library);
     return Ok(language.into());
 }
-pub fn get_precompiled_language(name: &str) -> MordantConfigResult<Language> {
+
+pub fn get_builtin_language(name: &str) -> MordantConfigResult<Language> {
     match name {
         #[cfg(feature = "javascript")]
         "javascript" => {
@@ -132,6 +133,21 @@ pub fn get_precompiled_language(name: &str) -> MordantConfigResult<Language> {
             use tree_sitter_python;
             return Ok(tree_sitter_python::LANGUAGE.into());
         }
+        #[cfg(feature = "lua")]
+        "lua" => {
+            use tree_sitter_lua;
+            return Ok(tree_sitter_lua::LANGUAGE.into());
+        }
+        #[cfg(feature = "json")]
+        "json" => {
+            use tree_sitter_json;
+            return Ok(tree_sitter_json::LANGUAGE.into());
+        }
+        #[cfg(feature = "typescript")]
+        "typescript" => {
+            use tree_sitter_typescript;
+            return Ok(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into());
+        }
         _ => {
             eprintln!(
                 "{} is not a builtin language! Either recompile with this feature flag enabled, or configure this language in mordant.toml!",
@@ -141,7 +157,61 @@ pub fn get_precompiled_language(name: &str) -> MordantConfigResult<Language> {
         }
     }
 }
-
+pub fn get_builtin_highlights(name: &str) -> MordantConfigResult<String> {
+    match name {
+        #[cfg(feature = "javascript")]
+        "javascript" => {
+            use tree_sitter_javascript;
+            return Ok(tree_sitter_javascript::HIGHLIGHT_QUERY.into());
+        }
+        #[cfg(feature = "python")]
+        "python" => {
+            use tree_sitter_python;
+            return Ok(tree_sitter_python::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "lua")]
+        "lua" => {
+            use tree_sitter_lua;
+            return Ok(tree_sitter_lua::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "json")]
+        "json" => {
+            use tree_sitter_json;
+            return Ok(tree_sitter_json::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "typescript")]
+        "typescript" => {
+            use tree_sitter_typescript;
+            return Ok(tree_sitter_typescript::HIGHLIGHTS_QUERY.into());
+        }
+        _ => {
+            eprintln!(
+                "{} is not a builtin language! Either recompile with this feature flag enabled, or configure this language in mordant.toml!",
+                name
+            );
+            return Err(HighlighterOptionError::NotImplementedError);
+        }
+    }
+}
+pub fn get_builtin_locals(name: &str) -> MordantConfigResult<String> {
+    match name {
+        #[cfg(feature = "javascript")]
+        "javascript" => {
+            return Ok(tree_sitter_javascript::LOCALS_QUERY.into());
+        }
+        #[cfg(feature = "lua")]
+        "lua" => {
+            return Ok(tree_sitter_lua::LOCALS_QUERY.into());
+        }
+        #[cfg(feature = "typescript")]
+        "typescript" => {
+            return Ok(tree_sitter_typescript::LOCALS_QUERY.into());
+        }
+        _ => {
+            return Err(HighlighterOptionError::NotImplementedError);
+        }
+    }
+}
 pub fn strip_nonstandard_predicates(mut query: Query) -> Query {
     for pattern_index in 0..query.pattern_count() {
         let general_predicates = query.general_predicates(pattern_index);
