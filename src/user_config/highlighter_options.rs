@@ -31,8 +31,8 @@ pub fn expand_path(path: PathBuf) -> MordantConfigResult<PathBuf> {
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
 pub enum QuerySrc {
-    Path(PathBuf),
-    Text(String),
+    Path { path: PathBuf },
+    Text { query: String },
     BuiltIn,
 }
 impl Default for QuerySrc {
@@ -42,6 +42,7 @@ impl Default for QuerySrc {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(untagged)]
 pub enum LanguageSrc {
     FromSource {
         path: PathBuf,
@@ -88,14 +89,14 @@ impl MordantHighlighterConfig {
 
     fn get_query_string(query: &QuerySrc) -> MordantConfigResult<String> {
         match &query {
-            QuerySrc::Path(_path) => {
+            QuerySrc::Path { path: _path } => {
                 let path = expand_path(_path.clone())?;
                 match read_to_string(&path) {
                     Ok(str) => return Ok(str),
                     Err(err) => return Err(HighlighterOptionError::IOError(err)),
                 };
             }
-            QuerySrc::Text(text) => {
+            QuerySrc::Text { query: text } => {
                 return Ok(text.into());
             }
             QuerySrc::BuiltIn => {
@@ -111,7 +112,7 @@ impl MordantHighlighterConfig {
             &self
                 .injections_query
                 .as_ref()
-                .unwrap_or(&QuerySrc::Text("".into())),
+                .unwrap_or(&QuerySrc::Text { query: "".into() }),
         )
         .unwrap_or_else(|err| {
             // TODO print error
@@ -123,7 +124,7 @@ impl MordantHighlighterConfig {
             &self
                 .locals_query
                 .as_ref()
-                .unwrap_or(&QuerySrc::Text("".into())),
+                .unwrap_or(&QuerySrc::Text { query: "".into() }),
         )
         .unwrap_or_else(|err| {
             // TODO print error

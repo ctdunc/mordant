@@ -1,0 +1,20 @@
+nvim_treesitter_location = "~/.local/share/nvim/lazy/nvim-treesitter" 
+
+[languages.python]
+name = "python"
+language = { path = "~/.local/share/nvim/lazy/nvim-treesitter/parser/python.so", symbol_name = "tree_sitter_python" }
+highlights_query = { path = "~/.local/share/nvim/lazy/nvim-treesitter/queries/python/highlights.scm" }
+injections_query = { query = '''
+(call
+  (identifier) @name (#eq? @name clientside_callback) 
+  (argument_list 
+    ((string (string_content) 
+	     @injection.content 
+	     (#set! injection.include-children)
+	     (#set! injection.language "javascript")))
+	)
+)
+''' }
+
+[languages.javascript]
+name = "javascript"
