@@ -1,10 +1,10 @@
 use clap::Parser;
-use config::{Config, HIGHLIGHT_NAMES};
 use std::fs::read_to_string;
 use tree_sitter::{self, QueryCapture, StreamingIterator};
 use tree_sitter_highlight::{HighlightEvent, Highlighter};
 use tree_sitter_md;
-mod config;
+use user_config::{MordantConfig, treesitter_util::HIGHLIGHT_NAMES};
+mod user_config;
 // mod markdown;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -16,7 +16,7 @@ struct Args {
 }
 fn main() {
     let args = Args::parse();
-    let config: Config = toml::from_str(
+    let config: MordantConfig = toml::from_str(
         read_to_string(args.config_file)
             .unwrap_or_default()
             .as_str(),
