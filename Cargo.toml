@@ -21,7 +21,7 @@ tree-sitter-python = {version = "0.23.6", optional = true}
 tree-sitter-typescript = {version = "0.23.2", optional=true}
 
 [features]
-default = ["python", "javascript", "typescript", "lua", "json"]
+default = []
 python = ["dep:tree-sitter-python"]
 javascript = ["dep:tree-sitter-javascript"]
 typescript = ["dep:tree-sitter-typescript"]
