@@ -1,4 +1,7 @@
-use crate::user_config::error::MordantConfigResult;
+use super::{
+    error::MordantConfigResult,
+    treesitter_util::{get_builtin_highlights, get_builtin_locals},
+};
 use serde::{Deserialize, Serialize};
 use shellexpand;
 use std::{fs::read_to_string, path::PathBuf};
@@ -8,7 +11,7 @@ use tree_sitter_highlight::HighlightConfiguration;
 use crate::user_config::{
     error::HighlighterOptionError,
     treesitter_util::{
-        HIGHLIGHT_NAMES, get_language_from_source_file, get_precompiled_language,
+        HIGHLIGHT_NAMES, get_builtin_language, get_language_from_source_file,
         strip_nonstandard_predicates,
     },
 };
@@ -82,13 +85,13 @@ impl MordantHighlighterConfig {
             }
             LanguageSrc::BuiltIn => {
                 // try to get the language from preinstalled langs.
-                return get_precompiled_language(&self.name.as_str());
+                return get_builtin_language(&self.name.as_str());
             }
         }
     }
 
-    fn get_query_string(query: &QuerySrc) -> MordantConfigResult<String> {
-        match &query {
+    pub fn highlights_query(&self) -> MordantConfigResult<String> {
+        match &self.highlights_query {
             QuerySrc::Path { path: _path } => {
                 let path = expand_path(_path.clone())?;
                 match read_to_string(&path) {
@@ -100,36 +103,55 @@ impl MordantHighlighterConfig {
                 return Ok(text.into());
             }
             QuerySrc::BuiltIn => {
-                return Err(HighlighterOptionError::NotImplementedError);
+                return get_builtin_highlights(&self.name.as_str());
             }
         }
     }
-    pub fn highlights_query(&self) -> MordantConfigResult<String> {
-        return Self::get_query_string(&self.highlights_query);
-    }
+
+    // TODO make this fail loudly or at least print some kind of error. These queries don't matter
+    // as much as the highlighter query.
     pub fn injections_query(&self) -> String {
-        return Self::get_query_string(
-            &self
-                .injections_query
-                .as_ref()
-                .unwrap_or(&QuerySrc::Text { query: "".into() }),
-        )
-        .unwrap_or_else(|err| {
-            // TODO print error
+        if let Some(query) = &self.injections_query {
+            match query {
+                QuerySrc::Path { path: _path } => {
+                    let path = expand_path(_path.clone()).unwrap_or("".into());
+                    match read_to_string(&path) {
+                        Ok(str) => return str,
+                        Err(_) => return "".into(),
+                    };
+                }
+                QuerySrc::Text { query: text } => {
+                    return text.into();
+                }
+                QuerySrc::BuiltIn => {
+                    return "".into();
+                }
+            }
+        } else {
             return "".into();
-        });
+        }
     }
+    // TODO ditto
     pub fn locals_query(&self) -> String {
-        return Self::get_query_string(
-            &self
-                .locals_query
-                .as_ref()
-                .unwrap_or(&QuerySrc::Text { query: "".into() }),
-        )
-        .unwrap_or_else(|err| {
-            // TODO print error
+        if let Some(query) = &self.locals_query {
+            match query {
+                QuerySrc::Path { path: _path } => {
+                    let path = expand_path(_path.clone()).unwrap_or("".into());
+                    match read_to_string(&path) {
+                        Ok(str) => return str,
+                        Err(_) => return "".into(),
+                    };
+                }
+                QuerySrc::Text { query: text } => {
+                    return text.into();
+                }
+                QuerySrc::BuiltIn => {
+                    return get_builtin_locals(&self.name.as_str()).unwrap_or("".into());
+                }
+            }
+        } else {
             return "".into();
-        });
+        }
     }
 }
 
