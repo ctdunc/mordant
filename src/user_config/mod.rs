@@ -1,7 +1,7 @@
 use error::MordantConfigResult;
-use highlighter_options::{LanguageSrc, MordantHighlighterConfig, QuerySrc};
+use highlighter_options::MordantHighlighterConfig;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use tree_sitter_highlight::HighlightConfiguration;
 pub(crate) mod error;
@@ -24,33 +24,12 @@ pub struct MordantConfig {
 
 impl MordantConfig {
     pub fn get_highlight_configurations(
-        mut self,
-        names: HashSet<String>,
+        self,
     ) -> MordantConfigResult<BTreeMap<String, HighlightConfiguration>> {
         let mut configs: BTreeMap<String, HighlightConfiguration> = BTreeMap::default();
-        for name in names.iter() {
-            let hl_config: MordantConfigResult<HighlightConfiguration> =
-                match self.languages.remove(name).take() {
-                    Some(lang) => lang,
-                    _ => MordantHighlighterConfig {
-                        name: name.clone(),
-                        language: LanguageSrc::BuiltIn,
-                        highlights_query: QuerySrc::BuiltIn,
-                        locals_query: Some(QuerySrc::BuiltIn),
-                        injections_query: Some(QuerySrc::BuiltIn),
-                    },
-                }
-                .try_into();
-
-            match hl_config {
-                Ok(hl) => {
-                    let _ = configs.insert(name.clone(), hl);
-                }
-                Err(err) => {
-                    eprintln!("{:?}", err);
-                }
-            };
+        for (name, lang) in self.languages.into_iter() {
+            let _ = configs.insert(name, lang.try_into()?);
         }
-        Ok(configs)
+        return Ok(configs);
     }
 }

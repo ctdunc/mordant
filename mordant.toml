@@ -18,3 +18,13 @@ injections_query = { query = '''
 
 [languages.javascript]
 name = "javascript"
+
+[languages.lua]
+name = "lua"
+
+[languages.typescript]
+name = "typescript"
+
+[languages.json]
+name = "json"
+highlights_query = { path = "~/.local/share/nvim/lazy/nvim-treesitter/queries/json/highlights.scm" }
