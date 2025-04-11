@@ -1,11 +1,10 @@
-use clap::Parser;
-use std::fs::read_to_string;
-use tree_sitter::{self, StreamingIterator};
-use user_config::MordantConfig;
 mod file_highlighter;
 mod user_config;
-use crate::file_highlighter::MarkdownFile;
-// mod markdown;
+
+use clap::Parser;
+use file_highlighter::MarkdownFile;
+use std::fs::read_to_string;
+use user_config::MordantConfig;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {

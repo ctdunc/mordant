@@ -16,7 +16,13 @@ use super::{
     },
 };
 
-pub fn expand_path(path: PathBuf) -> MordantConfigResult<PathBuf> {
+/// Convenient method for expanding paths, raising errors appropriately if failing.
+///
+/// # Errors
+///
+/// This function will return an error if the provided path is not parseable or expandable, or
+/// contains invalid unicode data.
+pub(super) fn expand_path(path: PathBuf) -> MordantConfigResult<PathBuf> {
     let path_as_str = path.into_os_string().into_string();
     match path_as_str {
         Ok(p) => match shellexpand::full(p.as_str()) {
@@ -53,6 +59,7 @@ pub enum LanguageSrc {
     },
     BuiltIn,
 }
+
 impl Default for LanguageSrc {
     fn default() -> Self {
         return LanguageSrc::BuiltIn;
@@ -72,6 +79,12 @@ pub struct MordantHighlighterConfig {
 }
 
 impl MordantHighlighterConfig {
+    /// Returns the language of this [`MordantHighlighterConfig`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if
+    /// - the provided configuration is incorrect, or attempting to use a non-existent builtin.
     pub fn language(&self) -> MordantConfigResult<Language> {
         match &self.language {
             LanguageSrc::FromSource { path, symbol_name } => {
@@ -90,6 +103,12 @@ impl MordantHighlighterConfig {
         }
     }
 
+    /// Returns the highlights query of this [`MordantHighlighterConfig`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if the provided configuration points
+    /// to a nonexistent or invalid file path.
     pub fn highlights_query(&self) -> MordantConfigResult<String> {
         match &self.highlights_query {
             QuerySrc::Path { path: _path } => {
@@ -108,9 +127,11 @@ impl MordantHighlighterConfig {
         }
     }
 
-    // TODO make this fail loudly or at least print some kind of error. These queries don't matter
-    // as much as the highlighter query.
+    /// Returns the injections query of this [`MordantHighlighterConfig`].
+    /// If we are unable to find one, return an empty string rather than error.
     pub fn injections_query(&self) -> String {
+        // TODO make this fail loudly or at least print some kind of error. These queries don't matter
+        // as much as the highlighter query.
         if let Some(query) = &self.injections_query {
             match query {
                 QuerySrc::Path { path: _path } => {
@@ -131,8 +152,10 @@ impl MordantHighlighterConfig {
             return "".into();
         }
     }
-    // TODO ditto
+    /// Returns the locals query of this [`MordantHighlighterConfig`].
+    /// If we are unable to find one, return an empty string rather than error.
     pub fn locals_query(&self) -> String {
+        // TODO ditto [`injections_query`]
         if let Some(query) = &self.locals_query {
             match query {
                 QuerySrc::Path { path: _path } => {
