@@ -1,19 +1,19 @@
 use clap::Parser;
 use std::fs::read_to_string;
-use tree_sitter::{self, QueryCapture, StreamingIterator};
-use tree_sitter_highlight::{HighlightEvent, Highlighter};
-use tree_sitter_md;
-use user_config::{MordantConfig, treesitter_util::HIGHLIGHT_NAMES};
+use tree_sitter::{self, StreamingIterator};
+use user_config::MordantConfig;
+mod file_highlighter;
 mod user_config;
+use crate::file_highlighter::MarkdownFile;
 // mod markdown;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(long)]
-    file: String,
+    file: Vec<String>,
     #[arg(long, short, default_value_t = String::from("./mordant.toml"))]
     config_file: String,
 }
+
 fn main() {
     let args = Args::parse();
     let config: MordantConfig = toml::from_str(
@@ -23,79 +23,12 @@ fn main() {
     )
     .unwrap();
 
-    let file_contents = read_to_string(args.file).unwrap();
+    let highlighters = config.get_highlight_configurations().unwrap();
 
-    let mut md_parser = tree_sitter::Parser::new();
+    let file_contents = read_to_string(args.file.get(0).unwrap()).unwrap();
+    let mut file = MarkdownFile::new(file_contents, &highlighters);
 
-    let _ = md_parser.set_language(&tree_sitter_md::LANGUAGE.into());
-    let tree = md_parser.parse(&file_contents, None).unwrap();
-    let mut cursor = tree_sitter::QueryCursor::new();
-    let code_block_query = tree_sitter::Query::new(
-        &tree_sitter_md::LANGUAGE.into(),
-        "(fenced_code_block
-          (info_string
-            (language) @injection.language)
-              (code_fence_content) @injection.content)"
-            .into(),
-    )
-    .unwrap();
-    let mut new_contents = file_contents.clone();
-    let mut code_blocks = cursor.matches(
-        &code_block_query,
-        tree.root_node(),
-        file_contents.as_bytes(),
-    );
-    let mut highlighter = Highlighter::new();
-    let mut offset: usize = 0;
-    let highlight_configs = config
-        .get_highlight_configurations(
-            ["python", "javascript", "typescript", "json", "lua"]
-                .into_iter()
-                .map(Into::into)
-                .collect(),
-        )
-        .unwrap();
-    while let Some(query_match) = code_blocks.next() {
-        // TODO are captures always in order?
-        let captures: Vec<&QueryCapture> = query_match.captures.iter().collect();
-        let lang_cap = captures.get(0).unwrap();
-        let lang_start = lang_cap.node.start_byte();
-        let lang_end = lang_cap.node.end_byte();
-        let lang = &file_contents[lang_start..lang_end];
-        if let Some(hl_cfg) = highlight_configs.get(lang) {
-            let code_cap = captures.get(1).unwrap();
-            let code_start = code_cap.node.start_byte();
-            let code_end = code_cap.node.end_byte();
-            let code_block = &file_contents[code_start..code_end];
-            eprintln!(
-                "highlighting block [{}, {}] with language {}",
-                code_start, code_end, lang
-            );
-            let highlights = highlighter.highlight(&hl_cfg, code_block.as_bytes(), None, |lang| {
-                return highlight_configs.get(lang);
-            });
+    file.format();
 
-            let mut formatted: String = "<pre><code>\n".into();
-            for event in highlights.unwrap() {
-                match event.unwrap() {
-                    HighlightEvent::Source { start, end } => {
-                        formatted += format!("{}", &code_block[start..end]).as_str();
-                    }
-                    HighlightEvent::HighlightStart(s) => {
-                        let classname = format!("code-{}", HIGHLIGHT_NAMES[s.0]);
-                        formatted += format!("<span class=\"{}\">", classname).as_str();
-                    }
-                    HighlightEvent::HighlightEnd => {
-                        formatted += format!("</span>").as_str();
-                    }
-                }
-            }
-            formatted += "\n</code></pre>\n";
-
-            let range = (code_start - (lang.len() + 6) + offset)..(code_end + 3 + offset);
-            offset += formatted.len() - range.len();
-            new_contents.replace_range(range, &formatted.as_str());
-        }
-    }
-    println!("{}", new_contents);
+    println!("{}", &file.contents());
 }

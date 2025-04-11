@@ -8,7 +8,7 @@ use std::{fs::read_to_string, path::PathBuf};
 use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
 
-use crate::user_config::{
+use super::{
     error::HighlighterOptionError,
     treesitter_util::{
         HIGHLIGHT_NAMES, get_builtin_language, get_language_from_source_file,
