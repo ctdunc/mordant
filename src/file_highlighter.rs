@@ -6,6 +6,14 @@ use tree_sitter::{
 };
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 use tree_sitter_md;
+
+/// Gets `tree_sitter::InputEdit` for a provided (formatted) code block.
+/// TBH, I'm not really sure if this actually does anything, since we aren't tracking the offset
+/// here, or updating our treesitter `Tree`, but I have it around just in case.
+///
+/// # Panics
+///
+/// Panics if `formatted.lines().last()` is `None`.
 fn get_edit_for_block(block_capture: &QueryCapture, formatted: &String) -> InputEdit {
     let start_byte = block_capture.node.start_byte();
     let old_end_byte = block_capture.node.end_byte();
@@ -39,11 +47,14 @@ struct CodeBlockCapture<'b> {
 }
 
 impl<'b> CodeBlockCapture<'b> {
-    fn get_capture_contents(&self, capture: &QueryCapture) -> &str {
-        let start = capture.node.start_byte();
-        let end = capture.node.end_byte();
-        return &self.file_contents[start..end];
-    }
+    /// Creates a new [`CodeBlockCapture`].
+    /// This is specific to the query specified in [`MarkdownFile::new`], and expects
+    /// exactly 3 captures: `@block, @injection.language, @injection.content`. In that order.
+    /// Anything else is undefined behavior.
+    ///
+    /// # Panics
+    //
+    /// Panics if there are less than 3 captures.
     pub fn new(
         captures: &'b mut Iter<QueryCapture>,
         file_contents: &'b String,
@@ -59,14 +70,25 @@ impl<'b> CodeBlockCapture<'b> {
             file_contents,
         };
     }
+    /// Returns a reference to the text captured by `@injection.language` of this [`CodeBlockCapture`].
     pub fn language(&self) -> &str {
         return &self.get_capture_contents(self.language_capture);
     }
+    /// Returns a reference to the text captured by `@injection.content` of this
+    /// [`CodeBlockCapture`].
     pub fn code_contents(&self) -> &str {
         return &self.get_capture_contents(self.code_block_capture);
     }
+    /// Returns a reference to the [`QueryCapture`] for this capture's `@block`.
     pub fn full_capture(&self) -> &QueryCapture {
         return &self.full_block_capture;
+    }
+
+    /// Returns a reference to the text captured by the provided capture.
+    fn get_capture_contents(&self, capture: &QueryCapture) -> &str {
+        let start = capture.node.start_byte();
+        let end = capture.node.end_byte();
+        return &self.file_contents[start..end];
     }
 }
 #[derive(Debug)]
@@ -77,19 +99,27 @@ pub struct BlockReplacement {
 pub struct MarkdownFile<'a> {
     file_contents: String,
     highlighters: &'a BTreeMap<String, HighlightConfiguration>,
-    tree: Tree,
+    // tree: Tree, for future use
     code_block_query: Query,
 }
-impl<'a> MarkdownFile<'a> {
+impl MarkdownFile<'_> {
+    /// Creates a new [`MarkdownFile`].
+    ///
+    /// # Panics
+    ///
+    /// Should be impossible as long as the query is correct. Currently the user cannot provide
+    /// this.
     pub fn new(
         file_contents: String,
-        highlighters: &'a BTreeMap<String, HighlightConfiguration>,
+        highlighters: &BTreeMap<String, HighlightConfiguration>,
     ) -> MarkdownFile {
+        /*
         let mut parser = Parser::new();
         let _ = parser
             .set_language(&tree_sitter_md::LANGUAGE.into())
             .unwrap();
-        let tree = parser.parse(&file_contents, None).unwrap();
+        */
+        // let tree = parser.parse(&file_contents, None).unwrap();
 
         let code_block_query = tree_sitter::Query::new(
             &tree_sitter_md::LANGUAGE.into(),
@@ -105,12 +135,19 @@ impl<'a> MarkdownFile<'a> {
         return MarkdownFile {
             file_contents,
             highlighters,
-            tree,
+            // tree,
             code_block_query,
         };
     }
 
-    pub fn parse_markdown_file(&mut self) -> Vec<BlockReplacement> {
+    /// Gets a [`Vec<BlockReplacement>`] to apply to this [`MarkdownFile`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if
+    /// - the provided file is not parseable.
+    /// - any highlightevent results in an error.
+    pub fn get_edits(&mut self) -> Vec<BlockReplacement> {
         let mut parser = Parser::new();
         let _ = parser
             .set_language(&tree_sitter_md::LANGUAGE.into())
@@ -164,6 +201,7 @@ impl<'a> MarkdownFile<'a> {
         return edits;
     }
 
+    /// Applies block replacement edits to the file, tracking offsets.
     pub fn apply_edits(&mut self, edits: Vec<BlockReplacement>) {
         let mut offset = 0;
         for edit in edits.iter() {
@@ -176,11 +214,13 @@ impl<'a> MarkdownFile<'a> {
         }
     }
 
+    /// Formats the file contents inplace, replacing code blocks with html fragments.
     pub fn format(&mut self) {
-        let edits = self.parse_markdown_file();
+        let edits = self.get_edits();
         self.apply_edits(edits);
     }
 
+    /// Returns the contents of this [`MarkdownFile`].
     pub fn contents(&self) -> String {
         return self.file_contents.clone();
     }
