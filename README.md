@@ -37,6 +37,7 @@ to
 
 ![yes-mordant](resources/yes-mordant.png)
 
+
 Note the language injection! This is a Python block, containing a string that should be treated as JavaScript,
 and both languages are highlighted with editor-level quality.
 
@@ -54,6 +55,7 @@ more languages, and would love feedback in the form of issues, contributions and
   - [With `ssg` (static site generator)](#with-ssg-static-site-generator)
 - [Styling](#styling)
 - [Roadmap](#roadmap)
+
 
 ## Configuration
 Currently, mordant is configured through a `mordant.toml` file. By default, mordant looks for `mordant.toml` in the directory it is being run from.
