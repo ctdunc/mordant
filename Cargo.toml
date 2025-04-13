@@ -6,6 +6,8 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.32", features = ["derive"] }
 libloading = "0.8.6"
+paste = "1.0.15"
+prettydiff = "0.8.0"
 serde = { version = "1.0.219", features=["derive"]}
 shellexpand = "3.1.0"
 toml = "0.8.20"
@@ -21,9 +23,12 @@ tree-sitter-python = {version = "0.23.6", optional = true}
 tree-sitter-typescript = {version = "0.23.2", optional=true}
 
 [features]
-default = ["python", "javascript", "typescript", "lua", "json"]
+default = []
+language_all = ["python", "javascript", "typescript", "lua", "json"]
+
 python = ["dep:tree-sitter-python"]
 javascript = ["dep:tree-sitter-javascript"]
 typescript = ["dep:tree-sitter-typescript"]
 lua = ["dep:tree-sitter-lua"]
 json = ["dep:tree-sitter-json"]
+

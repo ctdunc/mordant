@@ -1,0 +1,16 @@
+nvim_treesitter_location = "~/.local/share/nvim/lazy/nvim-treesitter" 
+
+[languages.python]
+name = "python"
+
+[languages.javascript]
+name = "javascript"
+
+[languages.lua]
+name = "lua"
+
+[languages.typescript]
+name = "typescript"
+
+[languages.json]
+name = "json"
