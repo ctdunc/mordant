@@ -31,11 +31,11 @@ will be converted to:
 
 With a bit of css (see [styling](#styling)), we go from
 
-![no-mordant](https://github.com/ctdunc/mordant/resources/no-mordant.png)
+![no-mordant](resources/no-mordant.png)
 
 to 
 
-![yes-mordant](https://github.com/ctdunc/mordant/resources/yes-mordant.png)
+![yes-mordant](resources/yes-mordant.png)
 
 Note the language injection! This is a Python block, containing a string that should be treated as JavaScript,
 and both languages are highlighted with editor-level quality.
