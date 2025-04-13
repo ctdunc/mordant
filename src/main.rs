@@ -1,6 +1,7 @@
-mod file_highlighter;
+pub(crate) mod file_highlighter;
+#[cfg(test)]
+mod tests;
 mod user_config;
-
 use clap::Parser;
 use file_highlighter::MarkdownFile;
 use std::fs::read_to_string;

@@ -2,7 +2,7 @@ use super::user_config::treesitter_util::HIGHLIGHT_NAMES;
 use core::slice::Iter;
 use std::collections::BTreeMap;
 use tree_sitter::{
-    InputEdit, Parser, Point, Query, QueryCapture, QueryCursor, StreamingIteratorMut, Tree,
+    InputEdit, Parser, Point, Query, QueryCapture, QueryCursor, StreamingIteratorMut,
 };
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
 use tree_sitter_md;
