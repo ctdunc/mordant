@@ -2,19 +2,20 @@
 mordant is a syntax highlighter for Github-flavored markdown files requiring *absolutely zero javascript*. It takes 
 fenced code blocks, and converts them to the appropriate HTML with classes corresponding
 to the tree-sitter grammar nodes of the block.
+
 mordant is *not* a fully-featured markdown renderer. It is meant to be used in conjuction with a markdown renderer which
 supports inline HTML tags.
-It is named after the substance used to bind dyes to fabric, since it binds pretty colors
+It is named after a class of substances used to bind dyes to fabric, since it binds pretty colors
 to your markdown files. 
 
 For example,
 ```{markdown}
-\`\`\`{javascript}
+\```{javascript}
 (x) => {
   // do stuff to x ...
   return x;
 }
-\`\`\`
+\```
 ```
 
 will be converted to:
@@ -28,19 +29,32 @@ will be converted to:
 </code></pre>
 ```
 
+With a bit of css (see [styling](#styling)), we go from
+
+![no-mordant](https://github.com/ctdunc/mordant/resources/no-mordant.png)
+
+to 
+
+![yes-mordant](https://github.com/ctdunc/mordant/resources/yes-mordant.png)
+
+Note the language injection! This is a Python block, containing a string that should be treated as JavaScript,
+and both languages are highlighted with editor-level quality.
+
 This project is in pre-pre-pre alpha. I'm working on adding more configuration options and support for
 more languages, and would love feedback in the form of issues, contributions and feature requests!
 
+- [Configuration](#configuration)
+  - [Supported Languages](#supported-languages)
+  - [Adding New Languages](#adding-new-languages)
+    - [Building into Mordant](#building-into-mordant)
+    - [From Source](#from-source)
+  - [Overriding Defaults for Builtin Languages](#overriding-defaults-for-builtin-languages)
+- [Usage](#usage)
+  - [Just Testing](#just-testing)
+  - [With `ssg` (static site generator)](#with-ssg-static-site-generator)
+- [Styling](#styling)
+- [Roadmap](#roadmap)
 
-- [mordant](#mordant)
-  - [Configuration](#configuration)
-    - [Supported Languages](#supported-languages)
-    - [Adding New Languages](#adding-new-languages)
-      - [Building into Mordant](#building-into-mordant)
-      - [From Source](#from-source)
-    - [Overriding Defaults for Builtin Languages](#overriding-defaults-for-builtin-languages)
-  - [Usage](#usage)
-  - [Roadmap](#roadmap)
 
 ## Configuration
 Currently, mordant is configured through a `mordant.toml` file. By default, mordant looks for `mordant.toml` in the directory it is being run from.
@@ -54,7 +68,6 @@ Currently, `mordant` contains support for the following languages:
 - typescript (not tsx)
 - lua
 - json
-
 These are gated behind features flags, so to get support for e.g., python and javascript, 
 you would install mordant with `cargo install --features python,javascript --path /path/to/mordant/repo`.
 
@@ -162,24 +175,75 @@ highlights_query = { path = "/path/to/highlights.scm" }
 ```
 
 ## Usage
+mordant is meant to be used in conjunction with other markdown renderers. 
+The only constraint is that your desired `md->html` converter
+must support inline `html` tags, so that the code blocks (which are inserted as html into your markdown docs)
+are still displayed as code in the html.
+
+### Just Testing
 After cloning the repo, execute
 ```
-$ cargo run -- --file $FILE_NAME
+$ cargo run --features=language_all -- $FILE_NAME
 ```
+The resulting Markdown file will be printed to stdout.
+
 Currently, mordant only supports formatting of a single file at a time. This is planned to change in the near future.
+
+### With `ssg` (static site generator)
+I originally started this project since I want to have a dirt-simple way to generate blog posts from Markdown files.
+The constraint I set upon myself for [my website](https://www.connorduncan.xyz) is that it should contain exactly 0 lines of JavaScript, but still
+feel somewhat modern and responsive.
+
+My requirements are very simple: text on a screen, which HTML is very good at. To publish my [blog](https://www.connorduncan.xyz/blog) I use a
+180 LoC shell script which is distributed as [ssg](https://romanzolotarev.com/ssg.html). Dirt simple.
+
+I keep all of my posts in a folder called `_blog` (so it isn't published as part of the github pages site), and 
+create the website with the following script: 
+
+```sh
+#!/bin/zsh
+# create a temporary directory to hold my files, since I don't want mordant to overwrite
+# my markdown files (in case I want to edit them later).
+mkdir _blog_intermediate/
+cp _blog/**.html ./_blog_intermediate
+
+# run mordant on each markdown file, overwriting the output.
+for file in ./_blog/**.md; do
+  mordant $file -c ./_mordant.toml > ./_blog_intermediate/$(basename $file)
+done
+
+# run ssg on the files which now have inline html instead of markdown code blocks,
+# moving the output into blog/
+ssg _blog_intermediate/ blog/ "Connor Duncan\'s Blog" 'https://www.connorduncan.xyz/blog/'
+
+# clean up the intermediate files.
+rm -rf _blog_intermediate/
+```
+
+## Styling
+mordant uses the tree-sitter highlight captures from neovim to determine highlights. This list was chosen because neovim
+has (to my knowledge) the most extensive library of highlight queries of any project using treesitter, since 
+treesitter is the default highlight provider for the editor.
+
+A full list of highlight names can be found at `src/config/treesitter_util.rs`. Depending on the language
+or highlight query you are using, not all of these captures will be relevant.
+
+As a starting point, you can look at [example.css](https:://github.com/ctdunc/mordant/example.css) for a port
+of the [gruvbox.nvim](https://github.com/ellisonleao/gruvbox.nvim/tree/main) theme for neovim. It supports both 
+dark and light mode, and contains colors for every currently supported node.
 
 ## Roadmap
 - Config
     - [x] Config file (+ hierarchy).
     - [x] Import grammars, queries.
 - Hygiene
-    - [ ] Don't just put everything in `main`.
-    - [ ] Tests
+    - [x] Don't just put everything in `main`.
+    - [x] Tests
 - Performance
     - [ ] Multi-Threading?
     - [ ] Cached Languages?
 - Docs
-    - [ ] Usage examples with other markdown renderers (see [this example](https://github.com/ctdunc/ctdunc.github.io/blob/master/_publish_blog.sh)).
+    - [x] Usage examples with other markdown renderers (see [this example](https://github.com/ctdunc/ctdunc.github.io/blob/master/_publish_blog.sh)).
     - [ ] CONTRIBUTING.
     - [ ] CSS examples.
 

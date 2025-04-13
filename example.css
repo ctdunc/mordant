@@ -1,0 +1,436 @@
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg_h: #1d2021;
+    --bg:   #282828;
+    --bg_s: #32302f;
+    --bg1:  #3c3836;
+    --bg2:  #504945;
+    --bg3:  #665c54;
+    --bg4:  #7c6f64;
+    
+
+    --fg_h: #f9f5d7;
+    --fg_s: #f2e5bc;
+    --fg:  #fbf1c7;
+    --fg1: #ebdbb2;
+    --fg2: #d5c4a1;
+    --fg3: #bdae93;
+    --fg4: #a89984;
+
+    --red:    #fb4934;
+    --green:  #b8bb26;
+    --yellow: #fabd2f;
+    --blue:   #83a598;
+    --purple: #d3869b;
+    --aqua:   #8ec07c;
+    --gray:   #928374;
+    --orange: #fe8019;
+    
+    --dark-red: #722529;
+    --dark-green: #62693e;
+    --dark-aqua: #49503b;
+  }
+  pre > code {
+    background-color: var(--bg_h);
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --fg_h: #1d2021;
+    --fg:   #282828;
+    --fg_s: #32302f;
+    --fg1:  #3c3836;
+    --fg2:  #504945;
+    --fg3:  #665c54;
+    --fg4:  #7c6f64;
+
+    --bg_h: #f9f5d7;
+    --bg_s: #f2e5bc;
+    --bg:  #fbf1c7;
+    --bg1: #ebdbb2;
+    --bg2: #d5c4a1;
+    --bg3: #bdae93;
+    --bg4: #a89984;
+
+    --red: #9d0006;
+    --green: #79740e;
+    --yellow: #b57614;
+    --blue: #076678;
+    --purple: #8f3f71;
+    --aqua: #427b58;
+    --orange: #af3a03;
+    
+    --dark-red: #fc9487;
+    --dark-green: #d5d39b;
+    --dark-aqua: #49503b;
+  }
+  pre > code {
+    background-color: var(--bg_s);
+  }
+}
+ 
+pre > code
+{
+    overflow-x: auto;
+    max-width: min(50em, 95vw);
+    display:block;
+    color: var(--fg);
+    border-radius: 1em;
+    padding-left: 1em;
+}
+code { color: var(--fg1);}
+.code-variable {
+  color: var(--fg1);
+}
+.code-variable\.builtin {
+  color: var(--orange); 
+}
+.code-variable\.parameter {
+  color: var(--blue);
+}
+.code-variable\.parameter\.builtin {
+  color: var(--orange); 
+
+}
+.code-variable\.member {
+  color: var(--orange); 
+
+}
+.code-constant {
+  color: var(--purple);
+}
+.code-constant\.builtin {
+
+  color: var(--orange); 
+}
+.code-constant\.macro {
+  color:var(--aqua);
+}
+.code-module {
+  color: var(--fg1);
+
+}
+.code-module\.builtin {
+  color: var(--orange); 
+
+}
+.code-label {
+  color: var(--red);
+}
+.code-string {
+  color: var(--green);
+}
+.code-string\.documentation {
+  color: var(--green);
+
+}
+.code-string\.regexp {
+  color: var(--green);
+
+}
+.code-string\.escape {
+
+  color: var(--orange); 
+}
+.code-string\.special {
+
+  color: var(--orange); 
+}
+.code-string\.special\.symbol {
+  color: var(--blue);
+}
+.code-string\.special\.path {
+  color: var(--blue);
+  text-decoration: underline;
+}
+.code-string\.special\.url {
+  color: var(--blue);
+  text-decoration: underline;
+
+}
+.code-character {
+  color: var(--purple);
+}
+.code-character\.special {
+  color: var(--orange); 
+
+}
+.code-boolean {
+  color: var(--purple);
+
+}
+.code-number {
+  color: var(--purple);
+
+}
+.code-number\.float {
+  color: var(--purple);
+
+}
+.code-type {
+  color: var(--green);
+
+}
+.code-type\.builtin {
+  color: var(--green);
+
+}
+.code-type\.definition {
+  color: var(--green);
+
+}
+.code-attribute {
+  color:var(--aqua);
+
+}
+.code-attribute\.builtin {
+  color: var(--orange); 
+
+}
+.code-property {
+  color: var(--blue);
+
+}
+.code-function {
+  color: var(--green);
+  font-weight: bold;
+}
+.code-function\.builtin {
+  color: var(--orange); 
+
+}
+.code-function\.call {
+  color: var(--green);
+  font-weight: bold;
+}
+.code-function\.macro {
+  color:var(--aqua);
+
+}
+.code-function\.method {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-function\.method\.call {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-constructor {
+  color: var(--orange); 
+
+}
+.code-operator {
+  color: var(--orange); 
+
+}
+.code-keyword {
+
+  color: var(--red);
+}
+.code-keyword\.coroutine {
+  color: var(--red);
+
+}
+.code-keyword\.function {
+  color: var(--red);
+
+}
+.code-keyword\.operator {
+
+  color: var(--red);
+}
+.code-keyword\.import {
+  color:var(--aqua);
+
+}
+.code-keyword\.type {
+  color: var(--red);
+
+}
+.code-keyword\.modifier {
+  color: var(--red);
+
+}
+.code-keyword\.repeat {
+  color: var(--red);
+
+}
+.code-keyword\.return {
+  color: var(--red);
+
+}
+.code-keyword\.debug {
+  color: var(--orange); 
+
+}
+.code-keyword\.exception {
+  color: var(--red);
+
+}
+.code-keyword\.conditional {
+  color: var(--red);
+
+}
+.code-keyword\.conditional\.ternary {
+  color: var(--red);
+
+}
+.code-keyword\.directive {
+  color:var(--aqua);
+
+}
+.code-keyword\.directive\.define {
+  color:var(--aqua);
+
+}
+.code-punctuation\.delimiter {
+
+  color: var(--orange); 
+}
+.code-punctuation\.bracket {
+  color: var(--orange); 
+
+}
+.code-punctuation\.special {
+  color: var(--orange); 
+
+}
+.code-comment {
+  color: var(--gray);
+}
+.code-comment\.documentation {
+  color: var(--gray);
+}
+.code-comment\.error {
+  color: var(--bg);
+  background-color: var(--red);
+  font-weight: bold;
+}
+.code-comment\.warning {
+  color: var(--red);
+}
+.code-comment\.todo {
+  color: var(--fg);
+  background-color: var(--yellow);
+  font-weight:bold;
+}
+.code-comment\.note {
+  color: var(--orange); 
+
+}
+.code-markup\.strong {
+  color: var(--fg1);
+  font-weight: bold;
+}
+.code-markup\.italic {
+  color: var(--fg1);
+  font-style: italic;
+}
+.code-markup\.strikethrough {
+  text-decoration: line-through;
+  color: var(--fg1);
+}
+.code-markup\.underline {
+  color: var(--fg1);
+  text-decoration: underline;
+}
+.code-markup\.heading {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.1 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.2 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.3 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.4 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.5 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.heading\.6 {
+  color: var(--green);
+  font-weight: bold;
+
+}
+.code-markup\.quote {
+  color: var(--fg1);
+
+}
+.code-markup\.math {
+  color: var(--orange); 
+
+}
+.code-markup\.link {
+  color: var(--blue);
+  text-decoration: underline;
+
+}
+.code-markup\.link\.label {
+  color: var(--orange); 
+
+}
+.code-markup\.link\.url {
+  color: var(--blue);
+  text-decoration: underline;
+}
+.code-markup\.raw {
+  color: var(--green);
+}
+.code-markup\.raw\.block {
+  color: var(--green);
+
+}
+.code-markup\.list {
+  color: var(--orange); 
+
+}
+.code-markup\.list\.checked {
+
+  color: var(--green);
+}
+.code-markup\.list\.unchecked {
+  color: var(--gray);
+}
+.code-diff\.plus {
+  background-color: var(--dark-green);
+}
+.code-diff\.minus {
+  background-color: var(--dark-red);
+}
+.code-diff\.delta {
+  background-color: var(--dark-aqua);
+}
+.code-tag {
+  color: var(--orange); 
+
+}
+.code-tag\.builtin {
+  color: var(--orange); 
+
+}
+.code-tag\.attribute {
+  color: var(--blue);
+}
+.code-tag\.delimiter {
+  color: var(--orange); 
+}
