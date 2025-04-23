@@ -68,6 +68,11 @@ Currently, `mordant` contains support for the following languages:
 - typescript (not tsx)
 - lua
 - json
+- css
+- html
+- sql
+- rust
+
 These are gated behind features flags, so to get support for e.g., python and javascript, 
 you would install mordant with `cargo install --features python,javascript --path /path/to/mordant/repo`.
 

@@ -178,7 +178,11 @@ impl MarkdownFile<'_> {
                 for event in highlights.unwrap() {
                     match event.unwrap() {
                         HighlightEvent::Source { start, end } => {
-                            formatted += format!("{}", &code_block_contents[start..end]).as_str();
+                            formatted += format!("{}", &code_block_contents[start..end])
+                                .replace("&", "&amp;")
+                                .replace("<", "&lt;")
+                                .replace(">", "&gt;")
+                                .as_str();
                         }
                         HighlightEvent::HighlightStart(s) => {
                             let classname = format!("code-{}", HIGHLIGHT_NAMES[s.0]);

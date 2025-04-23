@@ -65,6 +65,9 @@ impl Default for LanguageSrc {
         return LanguageSrc::BuiltIn;
     }
 }
+fn _false() -> bool {
+    false
+}
 #[derive(Serialize, Deserialize, Debug)]
 pub struct MordantHighlighterConfig {
     pub name: String,
@@ -76,6 +79,8 @@ pub struct MordantHighlighterConfig {
     pub injections_query: Option<QuerySrc>,
     #[serde(default)]
     pub locals_query: Option<QuerySrc>,
+    #[serde(default = "_false")]
+    pub html_escape: bool,
 }
 
 impl MordantHighlighterConfig {

@@ -30,5 +30,5 @@ fn main() {
 
     file.format();
 
-    println!("{}", &file.contents());
+    print!("{}", &file.contents());
 }
