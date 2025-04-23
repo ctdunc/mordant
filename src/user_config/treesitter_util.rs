@@ -148,6 +148,26 @@ pub fn get_builtin_language(name: &str) -> MordantConfigResult<Language> {
             use tree_sitter_typescript;
             return Ok(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into());
         }
+        #[cfg(feature = "html")]
+        "html" => {
+            use tree_sitter_html;
+            return Ok(tree_sitter_html::LANGUAGE.into());
+        }
+        #[cfg(feature = "css")]
+        "css" => {
+            use tree_sitter_css;
+            return Ok(tree_sitter_css::LANGUAGE.into());
+        }
+        #[cfg(feature = "sql")]
+        "sql" => {
+            use tree_sitter_sequel;
+            return Ok(tree_sitter_sequel::LANGUAGE.into());
+        }
+        #[cfg(feature = "rust")]
+        "rust" => {
+            use tree_sitter_rust;
+            return Ok(tree_sitter_rust::LANGUAGE.into());
+        }
         _ => {
             eprintln!(
                 "{} is not a builtin language! Either recompile with this feature flag enabled, or configure this language in mordant.toml!",
@@ -183,6 +203,26 @@ pub fn get_builtin_highlights(name: &str) -> MordantConfigResult<String> {
         "typescript" => {
             use tree_sitter_typescript;
             return Ok(tree_sitter_typescript::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "html")]
+        "html" => {
+            use tree_sitter_html;
+            return Ok(tree_sitter_html::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "css")]
+        "css" => {
+            use tree_sitter_css;
+            return Ok(tree_sitter_css::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "rust")]
+        "rust" => {
+            use tree_sitter_rust;
+            return Ok(tree_sitter_rust::HIGHLIGHTS_QUERY.into());
+        }
+        #[cfg(feature = "sql")]
+        "sql" => {
+            use tree_sitter_sequel;
+            return Ok(tree_sitter_sequel::HIGHLIGHTS_QUERY.into());
         }
         _ => {
             eprintln!(
