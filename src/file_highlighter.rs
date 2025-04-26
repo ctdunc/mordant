@@ -113,14 +113,6 @@ impl MarkdownFile<'_> {
         file_contents: String,
         highlighters: &BTreeMap<String, HighlightConfiguration>,
     ) -> MarkdownFile {
-        /*
-        let mut parser = Parser::new();
-        let _ = parser
-            .set_language(&tree_sitter_md::LANGUAGE.into())
-            .unwrap();
-        */
-        // let tree = parser.parse(&file_contents, None).unwrap();
-
         let code_block_query = tree_sitter::Query::new(
             &tree_sitter_md::LANGUAGE.into(),
             "(fenced_code_block
