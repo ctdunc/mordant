@@ -2,6 +2,11 @@ use libloading;
 use shellexpand;
 use std::{env::VarError, fmt, io, path::PathBuf, result::Result};
 pub type MordantConfigResult<T> = Result<T, MordantConfigError>;
+impl<T> From<MordantConfigError> for MordantConfigResult<T> {
+    fn from(e: MordantConfigError) -> Self {
+        return Err(e);
+    }
+}
 
 #[derive(Debug)]
 pub enum MordantConfigError {
@@ -30,12 +35,6 @@ impl From<tree_sitter::QueryError> for MordantConfigError {
 impl From<shellexpand::LookupError<VarError>> for MordantConfigError {
     fn from(e: shellexpand::LookupError<VarError>) -> Self {
         return Self::ShellExpandError(e);
-    }
-}
-
-impl<T> From<MordantConfigError> for MordantConfigResult<T> {
-    fn from(e: MordantConfigError) -> Self {
-        return Err(e);
     }
 }
 

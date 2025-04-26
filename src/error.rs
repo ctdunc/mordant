@@ -5,10 +5,15 @@ pub type MordantResult<T> = Result<T, MordantError>;
 
 pub enum MordantError {
     Config(MordantConfigError),
+    TOML(toml::de::Error),
     IO(io::Error),
-    Lib,
 }
 
+impl From<toml::de::Error> for MordantError {
+    fn from(value: toml::de::Error) -> Self {
+        return Self::TOML(value);
+    }
+}
 impl From<MordantConfigError> for MordantError {
     fn from(e: MordantConfigError) -> Self {
         return Self::Config(e);
@@ -30,8 +35,8 @@ impl fmt::Display for MordantError {
             Self::IO(err) => {
                 write!(f, "{err}")
             }
-            Self::Lib => {
-                write!(f, "shouldbe imposslbe")
+            Self::TOML(err) => {
+                write!(f, "{err}")
             }
         }
     }
