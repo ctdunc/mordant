@@ -1,4 +1,6 @@
-use super::error::{HighlighterOptionError, MordantConfigResult};
+use crate::user_config::error::MordantConfigError;
+
+use super::error::MordantConfigResult;
 use super::highlighter_options::expand_path;
 use std::path::PathBuf;
 use tree_sitter::{Language, Query};
@@ -100,25 +102,31 @@ pub fn get_language_from_source_file(
     symbol_name: &str,
 ) -> MordantConfigResult<Language> {
     use libloading::{Library, Symbol};
-    let library = match unsafe { Library::new(&expand_path(path.clone())?) } {
-        Ok(lib) => lib,
-        Err(err) => {
-            return Err(HighlighterOptionError::LibLoadingError(err));
-        }
-    };
-
-    let language = unsafe {
-        let language_fn: Symbol<unsafe extern "C" fn() -> *const ()> =
-            match library.get(symbol_name.as_bytes()) {
-                Ok(lib) => lib,
-                Err(err) => {
-                    return Err(HighlighterOptionError::LibLoadingError(err));
-                }
+    match unsafe { Library::new(&expand_path(path.clone())?) } {
+        Ok(library) => {
+            let language = unsafe {
+                let language_fn: Symbol<unsafe extern "C" fn() -> *const ()> =
+                    match library.get(symbol_name.as_bytes()) {
+                        Ok(lib) => lib,
+                        Err(err) => {
+                            return Err(MordantConfigError::LanguageSource {
+                                symbol_name: symbol_name.into(),
+                                error: err,
+                            });
+                        }
+                    };
+                tree_sitter_language::LanguageFn::from_raw(*language_fn)
             };
-        tree_sitter_language::LanguageFn::from_raw(*language_fn)
-    };
-    std::mem::forget(library);
-    return Ok(language.into());
+            std::mem::forget(library);
+            return Ok(language.into());
+        }
+        Err(err) => {
+            return Err(MordantConfigError::LanguageSource {
+                symbol_name: symbol_name.into(),
+                error: err,
+            });
+        }
+    }
 }
 
 pub fn get_builtin_language(name: &str) -> MordantConfigResult<Language> {
@@ -173,7 +181,7 @@ pub fn get_builtin_language(name: &str) -> MordantConfigResult<Language> {
                 "{} is not a builtin language! Either recompile with this feature flag enabled, or configure this language in mordant.toml!",
                 name
             );
-            return Err(HighlighterOptionError::NotImplementedError);
+            return Err(MordantConfigError::NotSupported(name.into()));
         }
     }
 }
@@ -225,11 +233,7 @@ pub fn get_builtin_highlights(name: &str) -> MordantConfigResult<String> {
             return Ok(tree_sitter_sequel::HIGHLIGHTS_QUERY.into());
         }
         _ => {
-            eprintln!(
-                "{} is not a builtin language! Either recompile with this feature flag enabled, or configure this language in mordant.toml!",
-                name
-            );
-            return Err(HighlighterOptionError::NotImplementedError);
+            return Err(MordantConfigError::NotSupported(name.into()));
         }
     }
 }
@@ -247,9 +251,7 @@ pub fn get_builtin_locals(name: &str) -> MordantConfigResult<String> {
         "typescript" => {
             return Ok(tree_sitter_typescript::LOCALS_QUERY.into());
         }
-        _ => {
-            return Err(HighlighterOptionError::NotImplementedError);
-        }
+        _ => return Err(MordantConfigError::NotSupported(name.into())),
     }
 }
 pub fn strip_nonstandard_predicates(mut query: Query) -> Query {

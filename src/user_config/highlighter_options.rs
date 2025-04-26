@@ -1,7 +1,3 @@
-use super::{
-    error::MordantConfigResult,
-    treesitter_util::{get_builtin_highlights, get_builtin_locals},
-};
 use serde::{Deserialize, Serialize};
 use shellexpand;
 use std::{fs::read_to_string, path::PathBuf};
@@ -9,10 +5,10 @@ use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
 
 use super::{
-    error::HighlighterOptionError,
+    error::{MordantConfigError, MordantConfigResult},
     treesitter_util::{
-        HIGHLIGHT_NAMES, get_builtin_language, get_language_from_source_file,
-        strip_nonstandard_predicates,
+        HIGHLIGHT_NAMES, get_builtin_highlights, get_builtin_language, get_builtin_locals,
+        get_language_from_source_file, strip_nonstandard_predicates,
     },
 };
 
@@ -23,17 +19,13 @@ use super::{
 /// This function will return an error if the provided path is not parseable or expandable, or
 /// contains invalid unicode data.
 pub(super) fn expand_path(path: PathBuf) -> MordantConfigResult<PathBuf> {
-    let path_as_str = path.into_os_string().into_string();
-    match path_as_str {
-        Ok(p) => match shellexpand::full(p.as_str()) {
-            Ok(new_path) => return Ok(PathBuf::from(new_path.to_string())),
-            Err(new_path) => return Err(HighlighterOptionError::ShellExpandError(new_path)),
-        },
-        Err(p) => {
-            return Err(HighlighterOptionError::UnhandledError(
-                format!("Provided path contained invalid unicode data: {:?}", p).into(),
+    match path.into_os_string().into_string() {
+        Ok(path_as_string) => {
+            return Ok(PathBuf::from(
+                shellexpand::full(path_as_string.as_str())?.to_string(),
             ));
         }
+        Err(path_as_string) => return Err(MordantConfigError::InvalidPath(path_as_string.into())),
     }
 }
 
@@ -118,10 +110,7 @@ impl MordantHighlighterConfig {
         match &self.highlights_query {
             QuerySrc::Path { path: _path } => {
                 let path = expand_path(_path.clone())?;
-                match read_to_string(&path) {
-                    Ok(str) => return Ok(str),
-                    Err(err) => return Err(HighlighterOptionError::IOError(err)),
-                };
+                return Ok(read_to_string(&path)?);
             }
             QuerySrc::Text { query: text } => {
                 return Ok(text.into());
@@ -184,23 +173,17 @@ impl MordantHighlighterConfig {
 }
 
 impl TryInto<HighlightConfiguration> for MordantHighlighterConfig {
-    type Error = HighlighterOptionError;
+    type Error = MordantConfigError;
     fn try_into(self) -> MordantConfigResult<HighlightConfiguration> {
-        match HighlightConfiguration::new(
+        let mut highlighter_config = HighlightConfiguration::new(
             self.language()?,
             self.name.clone(),
             self.highlights_query()?.as_str(),
             self.injections_query().as_str(),
             self.locals_query().as_str(),
-        ) {
-            Ok(mut highlighter_config) => {
-                highlighter_config.configure(&HIGHLIGHT_NAMES);
-                highlighter_config.query = strip_nonstandard_predicates(highlighter_config.query);
-                return Ok(highlighter_config);
-            }
-            Err(err) => {
-                return Err(HighlighterOptionError::TreeSitterError(err));
-            }
-        }
+        )?;
+        highlighter_config.configure(&HIGHLIGHT_NAMES);
+        highlighter_config.query = strip_nonstandard_predicates(highlighter_config.query);
+        return Ok(highlighter_config);
     }
 }
