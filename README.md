@@ -188,47 +188,45 @@ are still displayed as code in the html.
 ### Just Testing
 After cloning the repo, execute
 ```
-$ cargo run --features=language_all -- $FILE_NAME
+$ cargo run --features=language_all -- $FILE_NAMES
 ```
-The resulting Markdown file will be printed to stdout.
+the resulting markdown will be written to `./mordant.out`, with mirrored directory structure.
 
-Currently, mordant only supports formatting of a single file at a time. This is planned to change in the near future.
 
-### With `ssg` (static site generator)
+### With `lowdown`.
 I originally started this project since I want to have a dirt-simple way to generate blog posts from Markdown files.
 The constraint I set upon myself for [my website](https://www.connorduncan.xyz) is that it should contain exactly 0 lines of JavaScript, but still
 feel somewhat modern and responsive.
 
-My requirements are very simple: text on a screen, which HTML is very good at. To publish my [blog](https://www.connorduncan.xyz/blog) I use a
-180 LoC shell script which is distributed as [ssg](https://romanzolotarev.com/ssg.html). Dirt simple.
-
-I keep all of my posts in a folder called `_blog` (so it isn't published as part of the github pages site), and 
-create the website with the following script: 
-
+I keep all of my markdown files in `./site`, and want everything to build into `./_site`, which is
+deployed by the GH pages pipeline. You can check out the full thing [here](https://github.com/ctdunc/ctdunc.github.io).
+Look in `build.sh`.
 ```sh
-#!/bin/zsh
-# create a temporary directory to hold my files, since I don't want mordant to overwrite
-# my markdown files (in case I want to edit them later).
-mkdir _blog_intermediate/
-cp _blog/**.html ./_blog_intermediate
+rm -f -rf -- ./_site/
+mkdir ./_site
 
-# run mordant on each markdown file, overwriting the output.
-for file in ./_blog/**.md; do
-  mordant $file -c ./_mordant.toml > ./_blog_intermediate/$(basename $file)
+cd site
+mordant -c ../mordant.toml --output-dir ../_tmp_mordant ./**/*.md ./*.md
+cd ..
+
+for file in $(find ./_tmp_mordant -name *.md); do
+	base_name=$(basename $file .md)
+        # I need to remove the _tmp_mordant slop from my paths. But I don't want
+        # the program to write in place either.
+	site_path=$(dirname $file | sed 's/\.\/_tmp_mordant//')
+	mkdir -p "./_site/$site_path"
+	lowdown --template=./template.html \
+	  -s "./_tmp_mordant/$site_path/$base_name.md" \
+	  -thtml \
+	  --html-no-skiphtml \
+	  --html-no-escapehtml > "./_site/$site_path/$base_name.html"
 done
-
-# run ssg on the files which now have inline html instead of markdown code blocks,
-# moving the output into blog/
-ssg _blog_intermediate/ blog/ "Connor Duncan\'s Blog" 'https://www.connorduncan.xyz/blog/'
-
-# clean up the intermediate files.
-rm -rf _blog_intermediate/
 ```
 
 ## Styling
-mordant uses the tree-sitter highlight captures from neovim to determine highlights. This list was chosen because neovim
-has (to my knowledge) the most extensive library of highlight queries of any project using treesitter, since 
-treesitter is the default highlight provider for the editor.
+mordant attempts to match the capture names from the [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter/blob/master/CONTRIBUTING.md#highlights)
+project. 
+nvim-treesitter has (to my knowledge) the most extensive library of highlight queries of any project using treesitter.
 
 A full list of highlight names can be found at `src/config/treesitter_util.rs`. Depending on the language
 or highlight query you are using, not all of these captures will be relevant.
