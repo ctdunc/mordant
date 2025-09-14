@@ -170,6 +170,73 @@ impl MordantHighlighterConfig {
             return "".into();
         }
     }
+
+    pub fn set_base_dir(mut self, base_dir: &PathBuf) -> Self {
+        match self.language {
+            LanguageSrc::FromSource { path, symbol_name } => {
+                if path.is_relative() {
+                    let mut new_path = PathBuf::new();
+                    new_path.push(&base_dir);
+                    new_path.push(path);
+                    self.language = LanguageSrc::FromSource {
+                        path: new_path,
+                        symbol_name,
+                    };
+                } else {
+                    self.language = LanguageSrc::FromSource { path, symbol_name }
+                }
+            }
+            _ => {}
+        }
+        match self.highlights_query {
+            QuerySrc::Path { path } => {
+                if path.is_relative() {
+                    let mut new_path = PathBuf::new();
+                    new_path.push(&base_dir);
+                    new_path.push(path);
+                    self.highlights_query = QuerySrc::Path { path: new_path };
+                } else {
+                    self.highlights_query = QuerySrc::Path { path };
+                }
+            }
+            _ => {}
+        }
+        if let Some(query) = &self.injections_query {
+            match query {
+                QuerySrc::Path { path } => {
+                    if path.is_relative() {
+                        let mut new_path = PathBuf::new();
+                        new_path.push(&base_dir);
+                        new_path.push(path);
+                        self.injections_query = Some(QuerySrc::Path { path: new_path });
+                    } else {
+                        self.injections_query = Some(QuerySrc::Path {
+                            path: path.to_path_buf(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+        if let Some(query) = &self.locals_query {
+            match query {
+                QuerySrc::Path { path } => {
+                    if path.is_relative() {
+                        let mut new_path = PathBuf::new();
+                        new_path.push(&base_dir);
+                        new_path.push(path);
+                        self.locals_query = Some(QuerySrc::Path { path: new_path });
+                    } else {
+                        self.locals_query = Some(QuerySrc::Path {
+                            path: path.to_path_buf(),
+                        });
+                    }
+                }
+                _ => {}
+            }
+        }
+        return self;
+    }
 }
 
 impl TryInto<HighlightConfiguration> for MordantHighlighterConfig {

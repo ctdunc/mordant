@@ -34,11 +34,12 @@ fn main() -> ExitCode {
 
 fn run() -> MordantResult<()> {
     let args = Args::parse();
-    let config: MordantConfig = toml::from_str(read_to_string(args.config_file)?.as_str())?;
+    let config_path = Path::new(&args.config_file);
+    let mut config: MordantConfig = toml::from_str(read_to_string(config_path)?.as_str())?;
+    config = config.with_base_dir(config_path.parent().unwrap().canonicalize().unwrap().into());
     let highlighters = config.get_highlight_configurations()?;
 
     for filename in &args.file {
-        // eprintln!("{}", filename);
         let file_contents = read_to_string(filename)?;
         let mut file = MarkdownFile::new(file_contents, &highlighters);
         file.format();
@@ -49,6 +50,5 @@ fn run() -> MordantResult<()> {
         write(out_path, &file.contents())?;
     }
 
-    // print!("{}", &file.contents());
     return Ok(());
 }
