@@ -31,7 +31,6 @@ impl MordantConfig {
         let base_dir = &self.base_dir.unwrap_or_default();
         for (name, mut lang) in self.languages.into_iter() {
             lang = lang.set_base_dir(&base_dir);
-            eprintln!("{:#?}", &lang);
             let _ = configs.insert(name, lang.try_into()?);
         }
         return Ok(configs);

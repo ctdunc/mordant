@@ -25,6 +25,7 @@ tree-sitter-lua = {version = "0.2.0", optional = true}
 tree-sitter-md = "0.3.2"
 tree-sitter-python = {version = "0.23.6", optional = true}
 tree-sitter-typescript = {version = "0.23.2", optional=true}
+rayon = "1.11.0"
 
 [features]
 default = ["language_all"]
