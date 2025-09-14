@@ -80,7 +80,7 @@ impl<'b> CodeBlockCapture<'b> {
         return &self.get_capture_contents(self.code_block_capture);
     }
     /// Returns a reference to the [`QueryCapture`] for this capture's `@block`.
-    pub fn full_capture(&self) -> &QueryCapture {
+    pub fn full_capture(&self) -> &QueryCapture<'_> {
         return &self.full_block_capture;
     }
 
@@ -112,7 +112,7 @@ impl MarkdownFile<'_> {
     pub fn new(
         file_contents: String,
         highlighters: &BTreeMap<String, HighlightConfiguration>,
-    ) -> MarkdownFile {
+    ) -> MarkdownFile<'_> {
         let code_block_query = tree_sitter::Query::new(
             &tree_sitter_md::LANGUAGE.into(),
             "(fenced_code_block
