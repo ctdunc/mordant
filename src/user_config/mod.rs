@@ -1,5 +1,5 @@
 use error::MordantConfigResult;
-use highlighter_options::{LanguageSrc, MordantHighlighterConfig};
+use highlighter_options::MordantHighlighterConfig;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
