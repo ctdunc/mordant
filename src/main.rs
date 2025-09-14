@@ -7,6 +7,7 @@ mod user_config;
 use clap::Parser;
 use error::MordantResult;
 use file_highlighter::MarkdownFile;
+use rayon::prelude::*;
 use std::path::Path;
 use std::{
     fs::{create_dir_all, read_to_string, write},
@@ -40,16 +41,21 @@ fn run() -> MordantResult<()> {
     config = config.with_base_dir(config_path.parent().unwrap().canonicalize().unwrap().into());
     let highlighters = config.get_highlight_configurations()?;
 
-    for filename in &args.file {
-        let file_contents = read_to_string(filename)?;
-        let mut file = MarkdownFile::new(file_contents, &highlighters);
-        file.format();
+    let _ = &args.file.par_iter().for_each(|f| {
+        if let Ok(file_contents) = read_to_string(f) {
+            let mut file = MarkdownFile::new(file_contents, &highlighters);
+            file.format();
 
-        let out_path = Path::new(&args.output_dir).join(filename.clone());
-
-        create_dir_all(&out_path.parent().unwrap()).unwrap();
-        write(out_path, &file.contents())?;
-    }
+            let out_path = Path::new(&args.output_dir).join(f.clone());
+            create_dir_all(&out_path.parent().unwrap()).unwrap();
+            if let Ok(_) = write(&out_path, &file.contents()) {
+            } else {
+                eprintln!("Couldn't write {:?}", &out_path);
+            }
+        } else {
+            eprintln!("Couldn't read {}", f);
+        }
+    });
 
     return Ok(());
 }
