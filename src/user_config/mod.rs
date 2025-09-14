@@ -1,5 +1,5 @@
 use error::MordantConfigResult;
-use highlighter_options::MordantHighlighterConfig;
+use highlighter_options::{LanguageSrc, MordantHighlighterConfig};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -20,6 +20,7 @@ pub struct MordantConfig {
     nvim_treesitter_location: PathBuf,
     #[serde(default = "BTreeMap::default")]
     languages: BTreeMap<String, MordantHighlighterConfig>,
+    base_dir: Option<PathBuf>,
 }
 
 impl MordantConfig {
@@ -27,9 +28,17 @@ impl MordantConfig {
         self,
     ) -> MordantConfigResult<BTreeMap<String, HighlightConfiguration>> {
         let mut configs: BTreeMap<String, HighlightConfiguration> = BTreeMap::default();
-        for (name, lang) in self.languages.into_iter() {
+        let base_dir = &self.base_dir.unwrap();
+        for (name, mut lang) in self.languages.into_iter() {
+            lang = lang.set_base_dir(&base_dir);
+            eprintln!("{:#?}", &lang);
             let _ = configs.insert(name, lang.try_into()?);
         }
         return Ok(configs);
+    }
+
+    pub fn with_base_dir(mut self, path: PathBuf) -> Self {
+        self.base_dir = Some(path);
+        return self;
     }
 }
