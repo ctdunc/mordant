@@ -1,7 +1,8 @@
-mod error;
-pub(crate) mod file_highlighter;
 #[cfg(test)]
 mod tests;
+
+mod error;
+pub(crate) mod file_highlighter;
 mod user_config;
 use clap::Parser;
 use error::MordantResult;
