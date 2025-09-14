@@ -1,0 +1,87 @@
+nvim_treesitter_location = "/home/connor/.local/share/nvim/lazy/nvim-treesitter" 
+
+[languages.python]
+name = "python"
+language = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/parser/python.so", symbol_name = "tree_sitter_python" }
+highlights_query = { path = "./mordant/queries/python/highlights.scm" }
+injections_query = { query = '''
+(call
+  (identifier) @name (#eq? @name clientside_callback) 
+  (argument_list 
+    ((string (string_content) 
+	     @injection.content 
+	     (#set! injection.include-children)
+	     (#set! injection.language "javascript")))
+	)
+)
+''' }
+
+[languages.javascript]
+name = "javascript"
+injections_query = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/queries/ecma/injections.scm" }
+
+[languages.lua]
+name = "lua"
+
+[languages.typescript]
+name = "typescript"
+
+[languages.json]
+name = "json"
+highlights_query = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/queries/json/highlights.scm" }
+
+[languages.html]
+name = "html"
+highlights_query = { path = "./mordant/queries/html/highlights.scm" }
+injections_query = { path = "./mordant/queries/html/injections.scm" }
+
+[languages.css]
+name = "css"
+highlights_query = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/queries/css/highlights.scm" }
+
+[languages.sql]
+name= "sql"
+
+[languages.rust]
+name = "rust"
+injections_query = { query = '''
+(macro_invocation 
+  macro: (scoped_identifier
+	name: (identifier) @macro_name
+  ) 
+  (token_tree
+	(string_literal 
+	(string_content) @injection.content
+  ))
+  (#eq? @macro_name "query")
+  (#set! injection.language "sql")
+)
+''' }
+
+[languages.toml]
+name = "toml"
+language = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/parser/toml.so" }
+highlights_query = { path = "./mordant/queries/toml/highlights.scm" }
+injections_query = { query = '''
+(pair 
+  (bare_key) @key
+  (string) @injection.content
+  (#eq? @key "query")
+  (#set! injection.language "scheme")
+)
+''' }
+
+[languages.scheme]
+name = "scheme"
+language = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/parser/scheme.so" }
+highlights_query = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/queries/scheme/highlights.scm" }
+
+[languages.regex]
+name = "regex"
+language = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/parser/regex.so" }
+highlights_query = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/queries/regex/highlights.scm" }
+
+[languages.sh]
+name = "sh"
+language = { path = "/home/connor/.local/share/nvim/lazy/nvim-treesitter/parser/bash.so", symbol_name = "tree_sitter_bash" }
+highlights_query = { path = "./mordant/queries/bash/highlights.scm" }
