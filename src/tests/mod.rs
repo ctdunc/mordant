@@ -1,7 +1,6 @@
 use crate::{MarkdownFile, MordantConfig};
 use prettydiff::text::{ContextConfig, diff_lines};
 
-#[cfg(test)]
 #[macro_export]
 macro_rules! doc_test {
     ($($folder:literal,)+ $test_fn:ident) => {
@@ -17,6 +16,8 @@ macro_rules! doc_test {
         )+}
     }
 }
+
+#[cfg(test)]
 fn pretty_assert_eq(v1: &str, v2: &str) {
     if v1 != v2 {
         let diff = diff_lines(v1, v2);
@@ -34,6 +35,7 @@ fn pretty_assert_eq(v1: &str, v2: &str) {
 }
 
 // each folder should contain `input.md`, and `output.md`.
+#[cfg(test)]
 fn format_doc(config: &str, unformatted: &str, formatted: &str) {
     let default_config: MordantConfig = toml::from_str(config).unwrap();
 
