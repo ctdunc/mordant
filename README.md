@@ -1,22 +1,77 @@
 # mordant
-mordant is a syntax highlighter for Github-flavored markdown files requiring *absolutely zero javascript*. It takes 
-fenced code blocks, and converts them to the appropriate HTML with classes corresponding
-to the tree-sitter grammar nodes of the block.
+_Text Editor quality syntax highlighting, using pure HTML and CSS._
 
-mordant is *not* a fully-featured markdown renderer. It is meant to be used in conjuction with a markdown renderer which
-supports inline HTML tags.
-It is named after a class of substances used to bind dyes to fabric, since it binds pretty colors
-to your markdown files. 
+This project is in pre-pre-pre alpha. I'm working on adding more configuration options and support for
+more languages, and would love feedback in the form of issues, contributions and feature requests!
+
+- [What is mordant?](#what-is-mordant)
+- [Why should I pick mordant over highlight.js or any other library?](#why-should-i-pick-mordant-over-highlightjs-or-any-other-library)
+- [Why is it called mordant?](#why-is-it-called-mordant)
+- [How does mordant work?](#how-does-mordant-work)
+- [What *isn't* mordant?](#what-isnt-mordant)
+- [How Do I Use mordant?](#how-do-i-use-mordant)
+- [Configuration](#configuration)
+  - [Supported Languages](#supported-languages)
+  - [Adding New Languages](#adding-new-languages)
+    - [Building into Mordant](#building-into-mordant)
+    - [From Source](#from-source)
+  - [Overriding Defaults for Builtin Languages](#overriding-defaults-for-builtin-languages)
+- [Usage](#usage)
+  - [Just Testing](#just-testing)
+  - [With `lowdown`.](#with-lowdown)
+- [Styling](#styling)
+- [Roadmap](#roadmap)
+
+
+## What is mordant?
+
+mordant is a preprocessor for Markdown files that uses [Tree-sitter](https://tree-sitter.github.io/tree-sitter/) to provide
+high-quality, extensible and customizable syntax highlighting for fenced code blocks, *without the use of JavaScript*.
+Put another way, it is a wrapper around [tree-sitter-highlight](https://github.com/tree-sitter/tree-sitter/tree/master/crates/highlight) which 
+gives the user a straightforward way to configure language injections and highlights for cases where the standard syntax highlighting
+does not cut it.
+
+## Why should I pick mordant over highlight.js or any other library?
+
+Any of the following are good reasons:
+
+- you want to run a completely static site using only HTML and CSS. mordant runs entirely at the time you convert from markdown to HTML.
+- you need extremely granular control over syntax highlighting.
+- you are writing about a niche/proprietary language which lacks support in other renderers ([writing grammars](https://tree-sitter.github.io/tree-sitter/creating-parsers/3-writing-the-grammar.html) with Tree-sitter is actually pretty painless).
+- you want **language injections**.
+
+Language Injections are the killer feature that most major blogging platforms lack. 
+For example, I write a lot about Plotly's [Dash](https://plotly.com/examples/) framework, which
+requires developers to pass JavaScript as a string to the python function `clientside_callback`.
+It's very nice to have syntax highlighting for both languages in this case:
+
+Without mordant, I am stuck with:
+![no-mordant](resources/no-mordant.png)
+
+However, with Mordant, I can support nested programming languages within a markdown document:
+![yes-mordant](resources/yes-mordant.png)
+
+These injections are **controlled by the user** and highly customizable.
+
+## Why is it called mordant?
+
+In normal English, a mordant is a chemical compound used to bind dyes to fabric. 
+In this repository, mordant is a program that binds nice colors to your markdown files.
+
+## How does mordant work?
+
+mordant works by converting fenced code blocks into inline HTML, wrapping syntactic elements of your code in `<span>` tags
+with class names that can be manipulated using CSS.
+Highlights are specified by Tree-sitter highlight queries, which should use the same [highlight groups](https://neovim.io/doc/user/treesitter.html#treesitter-highlight-groups) as nvim-treesitter.
 
 For example,
-```{markdown}
-\```{javascript}
+
+``````{javascript}
 (x) => {
   // do stuff to x ...
   return x;
 }
-\```
-```
+``````
 
 will be converted to:
 
@@ -29,39 +84,25 @@ will be converted to:
 </code></pre>
 ```
 
-With a bit of css (see [styling](#styling)), we go from
 
-![no-mordant](resources/no-mordant.png)
-
-to 
-
-![yes-mordant](resources/yes-mordant.png)
-
-Note the language injection! This is a Python block, containing a string that should be treated as JavaScript,
-and both languages are highlighted with editor-level quality.
-
-This project is in pre-pre-pre alpha. I'm working on adding more configuration options and support for
-more languages, and would love feedback in the form of issues, contributions and feature requests!
-
-- [Configuration](#configuration)
-  - [Supported Languages](#supported-languages)
-  - [Adding New Languages](#adding-new-languages)
-    - [Building into Mordant](#building-into-mordant)
-    - [From Source](#from-source)
-  - [Overriding Defaults for Builtin Languages](#overriding-defaults-for-builtin-languages)
-- [Usage](#usage)
-  - [Just Testing](#just-testing)
-  - [With `ssg` (static site generator)](#with-ssg-static-site-generator)
-- [Styling](#styling)
-- [Roadmap](#roadmap)
+## What *isn't* mordant?
+mordant is *not* a fully-featured markdown renderer. It is meant to be used in conjuction with a markdown renderer which
+supports inline HTML tags.
 
 
-## Configuration
+
+
+
+
+## How Do I Use mordant?
+
+### Configuration
+
 Currently, mordant is configured through a `mordant.toml` file. By default, mordant looks for `mordant.toml` in the directory it is being run from.
 You may also provide the `-c` command line flag to tell mordant to look at a specific file. For example, on my github pages site,
 I require it to look at `_mordant.toml`, accomplished by running `mordant -c ./_mordant.toml --file $FILE_NAME`.
 
-### Supported Languages
+#### Supported Languages
 Currently, `mordant` contains support for the following languages:
 - python
 - javascript
@@ -76,11 +117,11 @@ Currently, `mordant` contains support for the following languages:
 These are gated behind features flags, so to get support for e.g., python and javascript, 
 you would install mordant with `cargo install --features python,javascript --path /path/to/mordant/repo`.
 
-### Adding New Languages
+#### Adding New Languages
 It is fairly easy to add new languages to mordant, and there are two methods to do so: as a built-in that
 can be compiled with mordant, or using a tree-sitter source file.
 
-#### Building into Mordant
+##### Building into Mordant
 Builtin languages are housed at `src/user_config/treesitter_util.rs`, in the functions `get_builtin_highlights`
 and `get_builtin_language`. If your desired language already has a rust crate (which many do), you should simply add the `LANGUAGE`
 and `HIGHLIGHT_QUERY` from that crate to the match statement, and gate it behind your language feature.
@@ -129,7 +170,7 @@ foolang = ["dep:tree-sitter-foolang"]
 
 *Please contribute any desired languages!*. Would love to have them onboard.
 
-#### From Source
+##### From Source
 If you are looking to work with a proprietary language that you don't want to contribute upstream,
 or need to work with a language that does not have an existing rust crate, it is also possible to include languages
 directly from `.so` files.
@@ -170,7 +211,7 @@ injections_query = { query = '''
 ''' }
 ```
 
-### Overriding Defaults for Builtin Languages
+#### Overriding Defaults for Builtin Languages
 If you want to add custom injections or highlights to a builtin language, you can simply omit the `language` field.
 For example, to use a custom highlights file for Javascript, without having to provide my own grammar, I could use
 ```toml
@@ -179,13 +220,13 @@ name = "javascript"
 highlights_query = { path = "/path/to/highlights.scm" }
 ```
 
-## Usage
+### Usage
 mordant is meant to be used in conjunction with other markdown renderers. 
 The only constraint is that your desired `md->html` converter
 must support inline `html` tags, so that the code blocks (which are inserted as html into your markdown docs)
 are still displayed as code in the html.
 
-### Just Testing
+#### Just Testing
 After cloning the repo, execute
 ```
 $ cargo run --features=language_all -- $FILE_NAMES
@@ -193,7 +234,7 @@ $ cargo run --features=language_all -- $FILE_NAMES
 the resulting markdown will be written to `./mordant.out`, with mirrored directory structure.
 
 
-### With `lowdown`.
+#### With `lowdown`.
 I originally started this project since I want to have a dirt-simple way to generate blog posts from Markdown files.
 The constraint I set upon myself for [my website](https://www.connorduncan.xyz) is that it should contain exactly 0 lines of JavaScript, but still
 feel somewhat modern and responsive.
@@ -223,7 +264,7 @@ for file in $(find ./_tmp_mordant -name *.md); do
 done
 ```
 
-## Styling
+### Styling
 mordant attempts to match the capture names from the [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter/blob/master/CONTRIBUTING.md#highlights)
 project. 
 nvim-treesitter has (to my knowledge) the most extensive library of highlight queries of any project using treesitter.
@@ -243,7 +284,7 @@ dark and light mode, and contains colors for every currently supported node.
     - [x] Don't just put everything in `main`.
     - [x] Tests
 - Performance
-    - [ ] Multi-Threading?
+    - [x] Multi-Threading? (Rayon)
     - [ ] Cached Languages?
 - Docs
     - [x] Usage examples with other markdown renderers (see [this example](https://github.com/ctdunc/ctdunc.github.io/blob/master/_publish_blog.sh)).
